@@ -6910,6 +6910,10 @@ var core_1 = __webpack_require__(0);
 var types_1 = __webpack_require__("./src/types/index.ts");
 var utils_1 = __webpack_require__("./src/utils/index.ts");
 var events_1 = __webpack_require__("./src/events.ts");
+/**
+ * Input properties that if changed, should re-generate the headerTemplateContext
+ */
+var headerContextProps = ['column', 'sorts', 'allRowsSelected'];
 var DataTableHeaderCellComponent = (function () {
     function DataTableHeaderCellComponent() {
         this.sort = new core_1.EventEmitter();
@@ -7007,6 +7011,30 @@ var DataTableHeaderCellComponent = (function () {
     });
     DataTableHeaderCellComponent.prototype.onContextmenu = function ($event) {
         this.columnContextmenu.emit({ event: $event, column: this.column });
+    };
+    DataTableHeaderCellComponent.prototype.ngOnInit = function () {
+        this.updateHeaderTemplateContext();
+        this.initialized = true;
+    };
+    DataTableHeaderCellComponent.prototype.ngOnChanges = function (changes) {
+        if (!this.initialized)
+            return;
+        // determine if a property that affects headerTemplateContext has changed
+        for (var prop in headerContextProps) {
+            if (changes.hasOwnProperty(prop)) {
+                this.updateHeaderTemplateContext();
+                break;
+            }
+        }
+    };
+    DataTableHeaderCellComponent.prototype.updateHeaderTemplateContext = function () {
+        this.headerTemplateContext = {
+            column: this.column,
+            sortDir: this.sortDir,
+            sortFn: this.sortFn,
+            allRowsSelected: this.allRowsSelected,
+            selectFn: this.selectFn
+        };
     };
     DataTableHeaderCellComponent.prototype.calcSortDir = function (sorts) {
         var _this = this;
@@ -7119,10 +7147,11 @@ var DataTableHeaderCellComponent = (function () {
     DataTableHeaderCellComponent = __decorate([
         core_1.Component({
             selector: 'datatable-header-cell',
-            template: "\n    <div>\n      <label\n        *ngIf=\"isCheckboxable\" \n        class=\"datatable-checkbox\">\n        <input \n          type=\"checkbox\"\n          [checked]=\"allRowsSelected\"\n          (change)=\"select.emit(!allRowsSelected)\" \n        />\n      </label>\n      <span \n        *ngIf=\"!column.headerTemplate\"\n        class=\"datatable-header-cell-wrapper\">\n        <span\n          class=\"datatable-header-cell-label draggable\"\n          (click)=\"onSort()\"\n          [innerHTML]=\"name\">\n        </span>\n      </span>\n      <ng-template\n        *ngIf=\"column.headerTemplate\"\n        [ngTemplateOutlet]=\"column.headerTemplate\"\n        [ngOutletContext]=\"{ \n          column: column, \n          sortDir: sortDir,\n          sortFn: sortFn,\n          allRowsSelected: allRowsSelected,\n          selectFn: selectFn\n        }\">\n      </ng-template>\n      <span\n        (click)=\"onSort()\"\n        [class]=\"sortClass\">\n      </span>\n    </div>\n  ",
+            template: "\n    <div>\n      <label\n        *ngIf=\"isCheckboxable\" \n        class=\"datatable-checkbox\">\n        <input \n          type=\"checkbox\"\n          [checked]=\"allRowsSelected\"\n          (change)=\"select.emit(!allRowsSelected)\" \n        />\n      </label>\n      <span \n        *ngIf=\"!column.headerTemplate\"\n        class=\"datatable-header-cell-wrapper\">\n        <span\n          class=\"datatable-header-cell-label draggable\"\n          (click)=\"onSort()\"\n          [innerHTML]=\"name\">\n        </span>\n      </span>\n      <ng-template\n        *ngIf=\"column.headerTemplate\"\n        [ngTemplateOutlet]=\"column.headerTemplate\"\n        [ngOutletContext]=\"headerTemplateContext\">\n      </ng-template>\n      <span\n        (click)=\"onSort()\"\n        [class]=\"sortClass\">\n      </span>\n    </div>\n  ",
             host: {
                 class: 'datatable-header-cell'
-            }
+            },
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush
         })
     ], DataTableHeaderCellComponent);
     return DataTableHeaderCellComponent;
